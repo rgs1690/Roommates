@@ -94,25 +94,96 @@ namespace Roommates.Repositories
 
         public List<Chore> GetUnassignedChores()
         {
-            
-            List<Chore> unassignedChores = new List<Chore>();
-            List<Chore> allChores = GetAll(); 
-            foreach (Chore c in allChores)
+            using (SqlConnection conn = Connection)
             {
-                if (c.RommmateId == 0)
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    unassignedChores.Add(c);
+                    cmd.CommandText = @"SELECT Id,
+	                                           Name
+                                        FROM Chore
+                                        LEFT JOIN RoommateChore ON ChoreId = Chore.Id
+                                        WHERE ChoreId IS Null;";
+                    SqlDataReader reader = cmd.ExecuteReader();
+            List<Chore> unassignedChores = new List<Chore>();
+           while (reader.Read())
+                    {
+                        Chore chore = new Chore()
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                            Name = reader.GetString(reader.GetOrdinal("Name"))
+                        };
+                        unassignedChores.Add(chore);
+
+                    }
+                    reader.Close();
+                    return unassignedChores;
+            }
+         }
+        }
+        public bool AssignChore(int roommateId,int choreId)
+        {   
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"INSERT INTO RoommateChore
+                                            (ChoreId, 
+                                            RoommateId)
+                                       VALUES
+                                            (@choreId,
+                                            @roommateId);";
+                    cmd.Parameters.AddWithValue("@choreId", choreId);
+                    cmd.Parameters.AddWithValue("@roommateId", roommateId);
+                    return cmd.ExecuteNonQuery() > 0; // returns 0(false) if no rows are affected. 
+                
                 }
             }
-                return unassignedChores;
+          
         }
-        public void AssignChore(int roommateId, int choreId)
-        {   
+        public List<Chore> GetAllChoresForAssignment()
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
 
-            Chore choreToAssign = GetById(choreId);
-            roommateId = choreToAssign.RommmateId; 
-           
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"SELECT Id,
+                                               CASE
+                                                  WHEN EXISTS (SELECT *
+                                                                 FROM Chore other
+                                                                 LEFT JOIN RoommateChore ON ChoreId = other.Id
+                                                                 WHERE ChoreId IS NULL
+                                                                   AND other.Id = c.Id)
+                                                    THEN Name + ' *'
+                                                    ELSE Name
+                                               END AS Name
+                                        FROM Chore c";
+
+                    SqlDataReader reader = cmd.ExecuteReader();
+
+                    List<Chore> chores = new List<Chore>();
+
+                    while (reader.Read())
+                    {
+                        int id = reader.GetInt32(reader.GetOrdinal("Id"));
+                        string name = reader.GetString(reader.GetOrdinal("Name"));
+
+                        Chore chore = new Chore()
+                        {
+                            Id = id,
+                            Name = name
+                        };
+                        chores.Add(chore);
+                    }
+                    reader.Close();
+                    return chores;
+                }
+            }
         }
+
 
     }
 }
