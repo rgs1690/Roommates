@@ -100,12 +100,12 @@ namespace Roommates
                         Console.ReadKey();
                         break;
                     case ("Search for roommate"):
-                        Console.Write("Room Id: ");
+                        Console.Write("Roommate Id: ");
                         int roommateId = int.Parse(Console.ReadLine());
 
                         Roommate roommate = roommateRepo.GetById(roommateId);
 
-                        Console.WriteLine($"{roommate.Id} - {roommate.FirstName}");
+                        Console.WriteLine($"{roommate.Id} - {roommate.FirstName} {roommate.LastName} moved into {roommate.Room.Name} on {roommate.MovedInDate.ToShortDateString()} and pays {roommate.RentPortion} dollars");
                         Console.Write("Press any key to continue");
                         Console.ReadKey();
                         break;
@@ -119,21 +119,36 @@ namespace Roommates
                         Console.ReadKey();
                         break;
                     case ("Assign chore to roommate"):
-                        var success = false; 
-                        List<Chore> choresToAssign = choreRepo.GetAll();
-                        int assignedChoreId = 0;
-                        Console.WriteLine("Please select Id of chore to assign:");
-                        foreach (Chore c in choresToAssign)
+                        List<Chore> allChores = choreRepo.GetAllChoresForAssignment();
+                        foreach (Chore c in allChores)
                         {
-                            Console.WriteLine($"{c.Name} has an Id of {c.Id}.");
+                            Console.WriteLine($"{c.Id}. {c.Name}");
                         }
-                        while (!success)
+                        Console.Write("Chore ID: ");
+                        int choreToAssign = int.Parse(Console.ReadLine());
+
+                        List<Roommate> allRoomies = roommateRepo.GetAll();
+                        foreach (Roommate rm in allRoomies)
                         {
-                        var input = Console.ReadLine();
-                        success = int.TryParse(input, out assignedChoreId);
+                            Console.Write($"  {rm.Id}. {rm.FirstName} {rm.LastName}");
+
+                        }
+                        Console.Write("Roommate ID:");
+                        int rmToAssign = int.Parse(Console.ReadLine());
+
+                        if (choreRepo.AssignChore(choreToAssign, rmToAssign))
+                        {
+                            Console.WriteLine("The chore was successfully assigned!");
+                        }
+                        else
+                        {
+                            Console.WriteLine("There was a pronlem while assigning this chore.");
                         }
                         Console.Write("Press any key to continue");
                         Console.ReadKey();
+
+                      
+                       
                         break;
 
                     case ("Exit"):
