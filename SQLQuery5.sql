@@ -32,4 +32,8 @@ SELECT Id,
 From Chore
 
 
+SELECT * 
+FROM Chore;
 
+SELECT *
+FROM Room
